@@ -1,22 +1,5 @@
 [
   {
-    "title": "Test",
-    "price": "6555",
-    "category": "embroidery",
-    "description": "Test",
-    "id": "1773447646506",
-    "images": [
-      "images/1773447646535-548.jpg",
-      "images/1773447649259-614.jpg",
-      "images/1773447653064-790.jpg",
-      "images/1773447655792-651.jpg",
-      "images/1773447658372-244.jpg",
-      "images/1773447660937-566.jpg",
-      "images/1773447663498-852.jpg",
-      "images/1773447666158-892.jpg"
-    ]
-  },
-  {
     "title": "Brush Paint Work Top & Duppta ",
     "price": "575",
     "category": "brush-paint",
