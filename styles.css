@@ -624,3 +624,29 @@ body {
 .skeleton-text { height: 1.2rem; margin: 1rem 1.25rem 0.5rem; border-radius: 4px; width: 60%; }
 .skeleton-desc { height: 0.8rem; margin: 0 1.25rem; border-radius: 4px; width: 85%; }
 .skeleton-price { height: 2rem; margin: auto 1.25rem 1.5rem; border-radius: 8px; width: 40%; }
+
+
+.scroll-arrow-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: scroll-bounce 1.6s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.scroll-arrow-hint span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  50%       { transform: translateX(-50%) translateY(8px); opacity: 0.6; }
+}
