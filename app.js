@@ -1,22 +1,60 @@
 document.addEventListener('DOMContentLoaded', () => {
     const productGrid = document.getElementById('product-grid');
-    const filterBtns  = document.querySelectorAll('.filter-btn');
+    const filterBtns = document.querySelectorAll('.filter-btn');
 
     // ─── Lightbox ────────────────────────────────────────────────────
-    const lightbox    = document.createElement('div');
+    const lightbox = document.createElement('div');
     lightbox.className = 'lightbox-overlay';
     lightbox.innerHTML = `
         <button class="lightbox-close" aria-label="Close">✕</button>
+        <button class="lightbox-arrow lightbox-prev" aria-label="Previous">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18l-6-6 6-6"/></svg>
+        </button>
         <img class="lightbox-img" src="" alt="Preview">
+        <button class="lightbox-arrow lightbox-next" aria-label="Next">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
+        </button>
     `;
     document.body.appendChild(lightbox);
 
     const lbImg = lightbox.querySelector('.lightbox-img');
+    const lbPrev = lightbox.querySelector('.lightbox-prev');
+    const lbNext = lightbox.querySelector('.lightbox-next');
 
-    const openLightbox = (src) => {
-        lbImg.src = src;
+    let lbImages = [];
+    let lbCurrentIdx = 0;
+
+    const updateLightboxImage = () => {
+        lbImg.src = lbImages[lbCurrentIdx];
+        if (lbImages.length > 1) {
+            lbPrev.style.display = 'flex';
+            lbNext.style.display = 'flex';
+        } else {
+            lbPrev.style.display = 'none';
+            lbNext.style.display = 'none';
+        }
+    };
+
+    const openLightbox = (images, index) => {
+        lbImages = Array.isArray(images) ? images : [images];
+        lbCurrentIdx = index || 0;
+        updateLightboxImage();
         lightbox.classList.add('open');
     };
+
+    lbPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (lbImages.length <= 1) return;
+        lbCurrentIdx = (lbCurrentIdx - 1 + lbImages.length) % lbImages.length;
+        updateLightboxImage();
+    });
+
+    lbNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (lbImages.length <= 1) return;
+        lbCurrentIdx = (lbCurrentIdx + 1) % lbImages.length;
+        updateLightboxImage();
+    });
 
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox || e.target.classList.contains('lightbox-close')) {
@@ -25,7 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (e) => {
+        if (!lightbox.classList.contains('open')) return;
         if (e.key === 'Escape') lightbox.classList.remove('open');
+        if (e.key === 'ArrowLeft') lbPrev.click();
+        if (e.key === 'ArrowRight') lbNext.click();
     });
 
     // ─── Pagination Logic ──────────────────────────────────────────
@@ -50,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const start = currentPage * BATCH_SIZE;
         const end = start + BATCH_SIZE;
         const batch = filteredProducts.slice(start, end);
-        
+
         if (batch.length > 0) {
             displayProducts(batch, currentPage === 0);
             currentPage++;
@@ -93,7 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const images = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : []);
             const hasMany = images.length > 1;
             const formatCat = (c) => c ? c.replace(/-/g, ' ') : '';
-            const thumbsHtml = hasMany ? images.map((src, i) => `<img src="${src}" alt="View ${i+1}" class="thumb-img${i === 0 ? ' active' : ''}" data-index="${i}" loading="lazy">`).join('') : '';
+            const thumbsHtml = hasMany ? images.map((src, i) => `<img src="${src}" alt="View ${i + 1}" class="thumb-img${i === 0 ? ' active' : ''}" data-index="${i}" loading="lazy">`).join('') : '';
+
+            const slideArrowsHtml = hasMany ? `
+                <button class="slide-arrow prev-arrow" aria-label="Previous image">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <button class="slide-arrow next-arrow" aria-label="Next image">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
+                </button>
+            ` : '';
 
             const card = document.createElement('div');
             card.className = 'product-card card-animate';
@@ -102,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${images[0] || ''}" alt="${product.title}" class="main-img" loading="lazy">
                     <span class="card-category-badge">${formatCat(product.category)}</span>
                     ${images.length > 1 ? `<span class="img-count-badge">1 / ${images.length}</span>` : ''}
+                    ${slideArrowsHtml}
                 </div>
                 ${hasMany ? `<div class="thumbnail-strip">${thumbsHtml}</div>` : ''}
                 <div class="card-content">
@@ -121,18 +172,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (hasMany) {
                 const thumbs = card.querySelectorAll('.thumb-img');
+                const prevBtn = card.querySelector('.prev-arrow');
+                const nextBtn = card.querySelector('.next-arrow');
+
+                const updateImage = (index) => {
+                    thumbs[currentIdx].classList.remove('active');
+                    currentIdx = index;
+                    mainImg.src = images[currentIdx];
+                    thumbs[currentIdx].classList.add('active');
+                    if (countBadge) countBadge.textContent = `${currentIdx + 1} / ${images.length}`;
+                };
+
                 thumbs.forEach(thumb => {
                     thumb.onclick = (e) => {
-                        thumbs[currentIdx].classList.remove('active');
-                        currentIdx = parseInt(e.currentTarget.dataset.index);
-                        mainImg.src = images[currentIdx];
-                        thumbs[currentIdx].classList.add('active');
-                        if (countBadge) countBadge.textContent = `${currentIdx + 1} / ${images.length}`;
+                        updateImage(parseInt(e.currentTarget.dataset.index));
                     };
                 });
+
+                if (prevBtn && nextBtn) {
+                    prevBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        let newIdx = currentIdx - 1;
+                        if (newIdx < 0) newIdx = images.length - 1;
+                        updateImage(newIdx);
+                    };
+                    nextBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        let newIdx = currentIdx + 1;
+                        if (newIdx >= images.length) newIdx = 0;
+                        updateImage(newIdx);
+                    };
+                }
             }
 
-            mainImg.onclick = () => openLightbox(mainImg.src);
+            mainImg.onclick = () => openLightbox(images, currentIdx);
             const saveBtn = card.querySelector('.save-btn');
             saveBtn.onclick = async (e) => {
                 e.preventDefault();
