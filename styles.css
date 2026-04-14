@@ -17,9 +17,9 @@
     --cta-bg: #1a1a1a;
     --cta-text: #ffffff;
     --cta-hover: #333;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
-    --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.14);
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 20px;
@@ -29,6 +29,10 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
@@ -126,7 +130,7 @@ body {
 
 .hero-subtitle {
     font-size: 1rem;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255, 255, 255, 0.65);
     line-height: 1.7;
     margin-bottom: 2rem;
 }
@@ -143,8 +147,8 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
     padding: 0.65rem 1.5rem;
     border-radius: 30px;
@@ -157,8 +161,35 @@ body {
 }
 
 .contact-btn:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+}
+
+/* ─── Scroll Down Arrow ─── */
+.scroll-down-arrow {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    animation: bounce 2s infinite;
+}
+
+.scroll-down-arrow:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #d4a96a;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(10px); }
+    60% { transform: translateY(5px); }
 }
 
 /* ─── Catalog Section ─── */
@@ -179,7 +210,7 @@ body {
     border-radius: var(--radius-md);
     margin-top: 1.5rem;
     box-shadow: 0 4px 20px rgba(212, 169, 106, 0.3);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .moq-label {
@@ -241,7 +272,8 @@ body {
     background-size: 1rem;
 }
 
-.category-dropdown:hover, .category-dropdown:focus {
+.category-dropdown:hover,
+.category-dropdown:focus {
     border-color: var(--accent);
     outline: none;
     box-shadow: var(--shadow-sm);
@@ -252,6 +284,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
+    scroll-margin-top: 90px;
 }
 
 /* ─── Product Card — Shopify Style ─── */
@@ -337,7 +370,7 @@ body {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(6px);
     color: var(--badge-text);
     padding: 0.3rem 0.75rem;
@@ -355,7 +388,7 @@ body {
     position: absolute;
     bottom: 12px;
     right: 12px;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0, 0, 0, 0.55);
     color: #fff;
     padding: 0.25rem 0.6rem;
     border-radius: 20px;
@@ -456,7 +489,9 @@ body {
 }
 
 /* ─── Blob BG (hidden in new design) ─── */
-.blob-bg { display: none; }
+.blob-bg {
+    display: none;
+}
 
 /* ─── Footer ─── */
 .glass-footer {
@@ -476,12 +511,91 @@ body {
     color: var(--accent);
 }
 
+/* ─── Slide Arrows ─── */
+.slide-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s, transform 0.2s;
+    color: var(--text-primary);
+    z-index: 10;
+}
+
+.card-img-wrapper:hover .slide-arrow {
+    opacity: 1;
+}
+
+.slide-arrow svg {
+    width: 18px;
+    height: 18px;
+}
+
+.slide-arrow:hover {
+    background: #fff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.prev-arrow {
+    left: 8px;
+}
+
+.next-arrow {
+    right: 8px;
+}
+
+/* Lightbox Arrows */
+.lightbox-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10000;
+}
+
+.lightbox-arrow:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-arrow svg {
+    width: 28px;
+    height: 28px;
+}
+
+.lightbox-prev {
+    left: 1.5rem;
+}
+
+.lightbox-next {
+    right: 1.5rem;
+}
+
 /* ─── Lightbox ─── */
 .lightbox-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.88);
+    background: rgba(0, 0, 0, 0.88);
     z-index: 9999;
     align-items: center;
     justify-content: center;
@@ -498,15 +612,15 @@ body {
     max-height: 90vh;
     object-fit: contain;
     border-radius: var(--radius-md);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .lightbox-close {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
     width: 40px;
     height: 40px;
@@ -521,16 +635,29 @@ body {
 }
 
 .lightbox-close:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
+    .slide-arrow {
+        opacity: 0.8; /* Always visible on mobile */
+    }
+    .lightbox-prev { left: 0.5rem; }
+    .lightbox-next { right: 0.5rem; }
+    .lightbox-arrow { width: 40px; height: 40px; }
+    .lightbox-arrow svg { width: 24px; height: 24px; }
+
     .hero-title {
         font-size: 2.1rem;
     }
@@ -552,9 +679,10 @@ body {
         display: flex;
         gap: 1.2rem;
     }
-    
+
     .nav-links li:not(:last-child):not(:nth-last-child(2)) {
-        display: none; /* Hide 'Catalog' and long links on small mobile if needed */
+        display: none;
+        /* Hide 'Catalog' and long links on small mobile if needed */
     }
 
     .nav-links a {
@@ -592,8 +720,15 @@ body {
 
 /* ─── Entrance Animation ─── */
 @keyframes cardIn {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .card-animate {
@@ -608,8 +743,13 @@ body {
 }
 
 @keyframes skeleton-loading {
-    from { background-position: 200% 0; }
-    to { background-position: -200% 0; }
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
 }
 
 .skeleton-card {
@@ -617,12 +757,32 @@ body {
     border-radius: var(--radius-lg);
     background: var(--surface);
     border: 1px solid var(--border);
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
-.skeleton-img { height: 260px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-.skeleton-text { height: 1.2rem; margin: 1rem 1.25rem 0.5rem; border-radius: 4px; width: 60%; }
-.skeleton-desc { height: 0.8rem; margin: 0 1.25rem; border-radius: 4px; width: 85%; }
-.skeleton-price { height: 2rem; margin: auto 1.25rem 1.5rem; border-radius: 8px; width: 40%; }
+.skeleton-img {
+    height: 260px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
 
+.skeleton-text {
+    height: 1.2rem;
+    margin: 1rem 1.25rem 0.5rem;
+    border-radius: 4px;
+    width: 60%;
+}
 
+.skeleton-desc {
+    height: 0.8rem;
+    margin: 0 1.25rem;
+    border-radius: 4px;
+    width: 85%;
+}
+
+.skeleton-price {
+    height: 2rem;
+    margin: auto 1.25rem 1.5rem;
+    border-radius: 8px;
+    width: 40%;
+}
