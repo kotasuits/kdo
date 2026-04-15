@@ -203,8 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="card-price">₹${product.price}</span>
                         </div>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem;">${product.images ? product.images.length : 0} photo(s)</p>
-                        <div class="card-actions">
-                            <button class="delete-btn" data-id="${product.id}">🗑️ Delete Product</button>
+                        <div class="card-actions" style="display: flex; gap: 0.5rem; justify-content: space-between;">
+                            <button class="edit-btn" data-id="${product.id}" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); padding: 0.5rem; border-radius: 6px; cursor: pointer; color: white; flex: 1; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">✏️ Edit</button>
+                            <button class="delete-btn" data-id="${product.id}" style="flex: 1; padding: 0.5rem; border-radius: 6px; cursor: pointer; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; transition: background 0.3s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">🗑️ Delete</button>
                         </div>
                     </div>
                 `;
@@ -232,6 +233,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Delete failed');
                         btn.disabled = false;
                         btn.textContent = '🗑️ Delete Product';
+                    }
+                };
+            });
+            adminGrid.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const id = btn.dataset.id;
+                    const product = products.find(p => p.id === id);
+                    if (product) {
+                        document.getElementById('edit-id').value = product.id;
+                        document.getElementById('edit-title').value = product.title || '';
+                        document.getElementById('edit-price').value = product.price || '';
+                        document.getElementById('edit-description').value = product.description || '';
+
+                        // Populate edit-category with options and select the correct one
+                        const editCatSelect = document.getElementById('edit-category');
+                        editCatSelect.innerHTML = catSelect.innerHTML;
+                        if (product.category) editCatSelect.value = product.category;
+
+                        // Render existing photos with delete buttons
+                        renderEditPhotos(product.images || []);
+
+                        // Clear any previously selected new files
+                        const newImgInput = document.getElementById('edit-new-images');
+                        if (newImgInput) newImgInput.value = '';
+
+                        document.getElementById('edit-modal').style.display = 'flex';
                     }
                 };
             });
@@ -299,4 +326,326 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.clear();
         window.location.href = 'login.html';
     };
+
+    // ─── AI Image Generation (Gemini) ────────────────────────────────
+    const BASE_PROMPT = `Use the uploaded images as the exact base reference. Keep the fabric, print, colors, motifs, and pattern placement 100% identical. Do NOT redesign or generate a new pattern.
+Enhance only the finishing and presentation:
+- Improve fabric clarity, sharpness, and texture
+- Make folds clean, neat, and professionally arranged
+- Maintain natural fabric fall and softness
+- Keep everything realistic and true to original
+Create a luxury boutique catalog display of a traditional Indian dress material (unstitched):
+- Display on a wooden hanger
+- Shirt fabric neatly folded
+- Dupatta elegantly draped (same as original, no modification)
+- Background: soft beige studio setup
+- Add minimal prop: small green plant in ceramic pot on wooden block
+- Lighting: soft, diffused studio lighting with natural shadows
+- Ultra-realistic, high resolution, sharp focus, e-commerce style.`;
+
+    // Load persisted API key
+    const aiApiKeyInput = document.getElementById('ai-api-key');
+    if (aiApiKeyInput) {
+        const savedKey = localStorage.getItem('hf_api_key');
+        if (savedKey) aiApiKeyInput.value = savedKey;
+
+        aiApiKeyInput.addEventListener('change', () => {
+            if (aiApiKeyInput.value.trim()) {
+                localStorage.setItem('hf_api_key', aiApiKeyInput.value.trim());
+            }
+        });
+    }
+
+    let aiGeneratedBlob = null; // stores the generated image blob
+
+    const generateBtn = document.getElementById('generate-ai-img-btn');
+    const aiResultPanel = document.getElementById('ai-result-panel');
+    const aiResultImg = document.getElementById('ai-result-img');
+    const useAiImgBtn = document.getElementById('use-ai-img-btn');
+    const discardAiImgBtn = document.getElementById('discard-ai-img-btn');
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', async () => {
+            const apiKey = aiApiKeyInput.value.trim();
+            if (!apiKey) {
+                alert('Please enter your Hugging Face Token first.');
+                aiApiKeyInput.focus();
+                return;
+            }
+
+            const imagesInput = document.getElementById('images');
+            if (!imagesInput || imagesInput.files.length === 0) {
+                alert('Please select at least one product photo first.');
+                imagesInput.focus();
+                return;
+            }
+
+            // Save the token
+            localStorage.setItem('hf_api_key', apiKey);
+
+            const file = imagesInput.files[0]; // use first selected image
+
+            // Convert image to base64
+            const toBase64 = (f) => new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => res(reader.result.split(',')[1]);
+                reader.onerror = rej;
+                reader.readAsDataURL(f);
+            });
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">⟳</span> Generating (~30s)...`;
+
+            // Add spin animation if not present
+            if (!document.getElementById('spin-style')) {
+                const style = document.createElement('style');
+                style.id = 'spin-style';
+                style.textContent = `@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }`;
+                document.head.appendChild(style);
+            }
+
+            try {
+                const imageBase64 = await toBase64(file);
+                const mimeType = file.type || 'image/jpeg';
+                const customPrompt = document.getElementById('ai-prompt').value.trim();
+                const fullPrompt = customPrompt ? `${BASE_PROMPT}\n${customPrompt}` : BASE_PROMPT;
+
+                // Official Hugging Face Inference API for image-to-image
+                // Model: timbrooks/instruct-pix2pix
+                const response = await fetch(
+                    'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'x-use-cache': 'false',
+                            'x-wait-for-model': 'true' // Wait if model is loading
+                        },
+                        body: JSON.stringify({
+                            inputs: imageBase64,
+                            parameters: {
+                                prompt: fullPrompt
+                            }
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || `HTTP ${response.status}`);
+                }
+
+                // Hugging Face returns the physical image bytes directly
+                aiGeneratedBlob = await response.blob();
+
+                // Show preview
+                const objectUrl = URL.createObjectURL(aiGeneratedBlob);
+                aiResultImg.src = objectUrl;
+                aiResultPanel.style.display = 'flex';
+                aiResultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (err) {
+                alert(`❌ AI Generation Failed:\n${err.message}`);
+                console.error('Hugging Face API error:', err);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '✨ Enhance Uploaded Image';
+            }
+        });
+    }
+
+    // ─── "Add to Product" button handler ────────────────────────
+    if (useAiImgBtn) {
+        useAiImgBtn.addEventListener('click', () => {
+            if (!aiGeneratedBlob) return;
+
+            // Create a File from the blob to inject into the images input
+            const ext = aiGeneratedBlob.type.split('/')[1] || 'png';
+            const aiFile = new File([aiGeneratedBlob], `ai-enhanced-${Date.now()}.${ext}`, { type: aiGeneratedBlob.type });
+
+            const imagesInput = document.getElementById('images');
+            const dt = new DataTransfer();
+
+            // Keep existing files + add AI file
+            for (const f of imagesInput.files) {
+                dt.items.add(f);
+            }
+            dt.items.add(aiFile);
+            imagesInput.files = dt.files;
+
+            // Visual confirmation
+            useAiImgBtn.textContent = '✅ Added!';
+            useAiImgBtn.style.background = 'rgba(34, 197, 94, 0.4)';
+            setTimeout(() => {
+                useAiImgBtn.textContent = 'Add to Product';
+                useAiImgBtn.style.background = 'rgba(34, 197, 94, 0.2)';
+            }, 2000);
+        });
+    }
+
+    if (discardAiImgBtn) {
+        discardAiImgBtn.addEventListener('click', () => {
+            aiGeneratedBlob = null;
+            aiResultImg.src = '';
+            aiResultPanel.style.display = 'none';
+        });
+    }
+
+    // ─── Edit Modal Logic ─────────────────────────────────────────
+    const editModal = document.getElementById('edit-modal');
+    let editDeletedPhotos = []; // tracks photo paths marked for deletion
+
+    const renderEditPhotos = (images) => {
+        const grid = document.getElementById('edit-photos-grid');
+        const countBadge = document.getElementById('edit-photo-count');
+        editDeletedPhotos = [];
+        grid.innerHTML = '';
+
+        const alive = images || [];
+        countBadge.textContent = `${alive.length} photo${alive.length !== 1 ? 's' : ''}`;
+
+        if (alive.length === 0) {
+            grid.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.85rem; grid-column: 1/-1;">No photos yet.</p>`;
+            return;
+        }
+
+        alive.forEach((src, idx) => {
+            const wrap = document.createElement('div');
+            wrap.dataset.src = src;
+            wrap.style.cssText = `position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--glass-border); aspect-ratio: 1; background: #111;`;
+
+            const img = document.createElement('img');
+            // For GitHub mode, construct the raw URL if it's a repo path
+            const imgSrc = src.startsWith('http') ? src : `https://raw.githubusercontent.com/${ghRepo}/main/${src}`;
+            img.src = imgSrc;
+            img.alt = `Photo ${idx + 1}`;
+            img.style.cssText = `width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.3s;`;
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.innerHTML = '✕';
+            delBtn.title = 'Remove this photo';
+            delBtn.style.cssText = `
+                position: absolute; top: 4px; right: 4px;
+                background: rgba(239,68,68,0.85); color: white;
+                border: none; border-radius: 50%; width: 24px; height: 24px;
+                cursor: pointer; font-size: 0.8rem; font-weight: 700;
+                display: grid; place-items: center; line-height: 1;
+                transition: transform 0.15s, background 0.2s;
+                backdrop-filter: blur(4px);
+            `;
+            delBtn.onmouseover = () => { delBtn.style.transform = 'scale(1.15)'; delBtn.style.background = 'rgba(239,68,68,1)'; };
+            delBtn.onmouseout  = () => { delBtn.style.transform = 'scale(1)';    delBtn.style.background = 'rgba(239,68,68,0.85)'; };
+
+            delBtn.onclick = () => {
+                editDeletedPhotos.push(src);
+                wrap.style.opacity = '0';
+                wrap.style.pointerEvents = 'none';
+                setTimeout(() => wrap.remove(), 300);
+                // Update count badge
+                const remaining = grid.querySelectorAll('[data-src]').length - editDeletedPhotos.length;
+                countBadge.textContent = `${remaining} photo${remaining !== 1 ? 's' : ''}`;
+            };
+
+            wrap.appendChild(img);
+            wrap.appendChild(delBtn);
+            grid.appendChild(wrap);
+        });
+    };
+
+    if (editModal) {
+        document.getElementById('close-edit-modal').onclick = () => {
+            editModal.style.display = 'none';
+        };
+
+        // Close on outside click
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) editModal.style.display = 'none';
+        });
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('save-edit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            const id = document.getElementById('edit-id').value;
+            const updatedData = {
+                title: document.getElementById('edit-title').value,
+                price: document.getElementById('edit-price').value,
+                category: document.getElementById('edit-category').value,
+                description: document.getElementById('edit-description').value
+            };
+
+            try {
+                if (mode === 'github') {
+                    const { content, sha } = await github.getFile('data.json');
+                    const products = content || [];
+                    const index = products.findIndex(p => p.id === id);
+
+                    if (index !== -1) {
+                        // 1. Start from existing images, remove deleted ones
+                        let currentImages = products[index].images || [];
+                        currentImages = currentImages.filter(img => !editDeletedPhotos.includes(img));
+
+                        // 2. Upload any new photos
+                        const newFilesInput = document.getElementById('edit-new-images');
+                        if (newFilesInput && newFilesInput.files.length > 0) {
+                            const files = newFilesInput.files;
+                            for (let i = 0; i < files.length; i++) {
+                                submitBtn.textContent = `Uploading photo ${i + 1}/${files.length}...`;
+                                const path = await github.uploadImage(files[i]);
+                                currentImages.push(path);
+                            }
+                        }
+
+                        // 3. Save product with updated images + fields
+                        products[index] = { ...products[index], ...updatedData, images: currentImages };
+                        submitBtn.textContent = 'Saving to GitHub...';
+                        const res = await github.updateFile('data.json', products, sha, `Update product ID: ${id}`);
+
+                        if (res.ok) {
+                            showMessage('✅ Product updated successfully!');
+                            editModal.style.display = 'none';
+                            loadAdminProducts();
+                        } else {
+                            throw new Error('GitHub update failed');
+                        }
+                    }
+                } else {
+                    // Server mode: handle multipart
+                    const newFilesInput = document.getElementById('edit-new-images');
+                    const formData = new FormData();
+                    formData.append('title', updatedData.title);
+                    formData.append('price', updatedData.price);
+                    formData.append('category', updatedData.category);
+                    formData.append('description', updatedData.description);
+                    formData.append('deletedPhotos', JSON.stringify(editDeletedPhotos));
+                    if (newFilesInput) {
+                        for (const f of newFilesInput.files) formData.append('images', f);
+                    }
+
+                    const res = await fetch(`api/products/${id}`, {
+                        method: 'PUT',
+                        headers: authHeader,
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        showMessage('✅ Product updated successfully!');
+                        editModal.style.display = 'none';
+                        loadAdminProducts();
+                    } else {
+                        throw new Error('Update failed');
+                    }
+                }
+            } catch (err) {
+                alert('Error updating product: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💾 Save Changes';
+            }
+        });
+    }
 });
