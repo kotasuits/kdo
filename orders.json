@@ -29,7 +29,7 @@
       }
     ],
     "total": 6250,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-05-01T14:49:09.815Z"
   },
   {
@@ -58,7 +58,7 @@
       }
     ],
     "total": 1250,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-05-01T14:48:24.513Z"
   },
   {
@@ -86,7 +86,7 @@
       }
     ],
     "total": 1950,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-05-01T14:41:51.245Z"
   },
   {
@@ -113,7 +113,7 @@
       }
     ],
     "total": 650,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-05-01T14:28:09.879Z"
   },
   {
@@ -141,7 +141,7 @@
       }
     ],
     "total": 650,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-05-01T14:22:19.959Z"
   },
   {
@@ -171,7 +171,7 @@
       }
     ],
     "total": 650,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-20T14:48:05.835Z"
   },
   {
@@ -203,7 +203,7 @@
       }
     ],
     "total": 595,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-20T14:11:32.676Z"
   },
   {
@@ -233,7 +233,7 @@
       }
     ],
     "total": 695,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-20T14:05:16.493Z"
   },
   {
@@ -291,7 +291,7 @@
       }
     ],
     "total": 1290,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-17T11:46:44.640Z"
   },
   {
@@ -348,7 +348,7 @@
       }
     ],
     "total": 495,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-16T18:36:18.238Z"
   },
   {
@@ -405,7 +405,7 @@
       }
     ],
     "total": 495,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-16T18:36:16.752Z"
   },
   {
@@ -485,7 +485,7 @@
       }
     ],
     "total": 6335,
-    "status": "new",
+    "status": "seen",
     "createdAt": "2026-04-16T15:36:13.172Z"
   }
 ]
